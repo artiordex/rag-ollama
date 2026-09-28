@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "[rag-ollama] uv sync",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "sync"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "[rag-ollama] run",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "rag-ollama"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "dependsOn": [
+        "[rag-ollama] uv sync"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build"
+    }
+  ]
+}

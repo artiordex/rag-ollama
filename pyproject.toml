@@ -1,0 +1,26 @@
+[project]
+name = "rag-ollama"
+version = "0.1.0"
+description = "Ollama-backed unstructured document quality diagnostics and pgvector RAG API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "flagembedding>=1.4.2",
+    "httpx>=0.28.1",
+    "pgvector>=0.5.0",
+    "pypdf>=5.0.0",
+    "psycopg[binary]>=3.3.6",
+    "python-docx>=1.1.2",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.9",
+    "uvicorn[standard]>=0.34.0",
+]
+
+[project.scripts]
+rag-ollama = "rag_ollama:main"
+rag-ollama-api = "rag_ollama.api:run"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
