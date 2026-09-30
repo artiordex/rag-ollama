@@ -1,4 +1,13 @@
-"""PostgreSQL/pgvector persistence."""
+# =============================================================================
+# 파일명: db.py
+# 경로: src/rag_ollama/db.py
+# 목적: PostgreSQL·pgvector 연결, 스키마, 문서·청크 저장과 검색 제공함
+# 작성자: AI전략팀
+# 작성일: 2026-09-30
+# 수정일: 2026-09-30
+# =============================================================================
+
+"""PostgreSQL·pgvector 연결, 스키마, 문서·청크 저장과 검색 제공함"""
 
 from __future__ import annotations
 
@@ -18,10 +27,22 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseError(RuntimeError):
-    """Raised when the storage layer cannot complete an operation."""
+    """저장 계층이 요청을 완료하지 못했음을 나타내는 예외임"""
 
 
 def _connect(settings: Settings, register_embedding: bool = False) -> psycopg.Connection[Any]:
+    """설정된 PostgreSQL에 dict row와 선택적 vector 타입을 연결함
+
+    Args:
+        settings: DB 주소와 연결 제한 시간을 포함한 애플리케이션 설정임
+        register_embedding: pgvector 타입 등록 여부임
+
+    Returns:
+        psycopg.Connection[Any]: 연결된 PostgreSQL 세션임
+
+    Raises:
+        DatabaseError: 연결 또는 vector 타입 등록에 실패할 때 발생함
+    """
     try:
         connection = psycopg.connect(
             settings.database_url,
@@ -36,7 +57,12 @@ def _connect(settings: Settings, register_embedding: bool = False) -> psycopg.Co
 
 
 def init_db(settings: Settings) -> None:
-    """Create the extension and the initial schema if they do not exist."""
+    """pgvector 확장과 문서·청크·검색 인덱스 스키마를 멱등적으로 생성함
+
+    Caveats:
+        구형 pgvector에서 HNSW 생성을 실패해도 소규모 데이터는 선형 검색으로
+        계속 사용할 수 있도록 선택 기능으로 취급함
+    """
 
     connection = _connect(settings)
     try:
@@ -80,8 +106,7 @@ def init_db(settings: Settings) -> None:
         )
         connection.commit()
 
-        # HNSW is available in modern pgvector releases. Keep schema setup
-        # usable with older extension versions by treating the index as optional.
+        # NOTE: 최신 pgvector의 HNSW를 사용하되 구버전 확장에서도 스키마 초기화가 계속되도록 선택 처리함
         try:
             connection.execute(
                 """
@@ -90,7 +115,7 @@ def init_db(settings: Settings) -> None:
                 """
             )
             connection.commit()
-        except Exception as exc:  # pragma: no cover - depends on server extension version
+        except Exception as exc:  # NOTE: 서버 pgvector 확장 버전에 따라 인덱스 생성 실패가 가능함
             connection.rollback()
             logger.warning("HNSW 인덱스를 만들지 못했습니다. 소규모 데이터는 선형 검색으로 동작합니다: %s", exc)
     except Exception as exc:
@@ -101,6 +126,14 @@ def init_db(settings: Settings) -> None:
 
 
 def check_db(settings: Settings) -> bool:
+    """PostgreSQL 연결 가능 여부를 짧은 쿼리로 확인함
+
+    Returns:
+        bool: `SELECT 1` 실행이 완료되면 True임
+
+    Raises:
+        DatabaseError: 연결 또는 상태 확인에 실패할 때 발생함
+    """
     connection = _connect(settings)
     try:
         connection.execute("SELECT 1")
@@ -112,6 +145,14 @@ def check_db(settings: Settings) -> bool:
 
 
 def find_document_by_hash(settings: Settings, source_name: str, content_hash: str) -> dict[str, Any] | None:
+    """원천 이름과 정규화 본문 해시가 같은 문서의 요약을 조회함
+
+    Returns:
+        dict[str, Any] | None: 중복 문서 요약 또는 대상이 없을 때 None임
+
+    Raises:
+        DatabaseError: 중복 조회에 실패할 때 발생함
+    """
     connection = _connect(settings)
     try:
         return connection.execute(
@@ -144,6 +185,30 @@ def save_document(
     chunks: list[dict[str, Any]],
     embeddings: list[list[float]],
 ) -> tuple[UUID, bool, int]:
+    """문서와 모든 청크·임베딩을 하나의 트랜잭션으로 저장함
+
+    Args:
+        settings: DB 연결과 임베딩 차원 설정임
+        source_name: 원천 파일 또는 문서 이름임
+        source_type: 입력 경로를 나타내는 유형임
+        mime_type: 원천 MIME 타입임
+        content_hash: 정규화 본문의 중복 판별 해시임
+        content: 저장할 정규화 원문임
+        metadata: 문서 메타데이터임
+        quality_report: 저장 시점의 품질 리포트임
+        chunks: 청크 본문과 원문 위치 메타데이터 목록임
+        embeddings: 청크별 정규화 임베딩 목록임
+
+    Returns:
+        tuple[UUID, bool, int]: 문서 ID, 중복 여부, 저장·기존 청크 수임
+
+    Raises:
+        ValueError: 청크와 임베딩 개수가 다를 때 발생함
+        DatabaseError: 저장 트랜잭션이 실패할 때 발생함
+
+    Caveats:
+        동일 이름과 해시의 문서는 새로 쓰지 않아 인제스트 재시도가 멱등적임
+    """
     if len(chunks) != len(embeddings):
         raise ValueError("chunks와 embeddings의 개수가 다릅니다.")
 
@@ -203,6 +268,14 @@ def save_document(
 
 
 def get_document(settings: Settings, document_id: UUID) -> dict[str, Any] | None:
+    """문서 메타데이터와 품질 요약 및 청크 수를 조회함
+
+    Returns:
+        dict[str, Any] | None: 문서 요약 또는 대상이 없을 때 None임
+
+    Raises:
+        DatabaseError: 문서 조회에 실패할 때 발생함
+    """
     connection = _connect()
     try:
         return connection.execute(
@@ -222,6 +295,25 @@ def get_document(settings: Settings, document_id: UUID) -> dict[str, Any] | None
         connection.close()
 
 
+def get_document_content(settings: Settings, document_id: UUID) -> dict[str, Any] | None:
+    """요약 조회와 분리해 저장된 추출 본문을 조회함
+
+    Caveats:
+        본문은 크기가 클 수 있어 일반 문서 목록 조회에서 불필요하게 읽지 않도록
+        별도 함수로 유지함
+    """
+    connection = _connect()
+    try:
+        return connection.execute(
+            "SELECT source_name, content, metadata FROM rag_documents WHERE id = %s",
+            (document_id,),
+        ).fetchone()
+    except Exception as exc:
+        raise DatabaseError("문서 본문을 조회하지 못했습니다.") from exc
+    finally:
+        connection.close()
+
+
 def search_chunks(
     settings: Settings,
     embedding: list[float],
@@ -230,6 +322,21 @@ def search_chunks(
     document_id: UUID | None = None,
     min_quality_score: int | None = None,
 ) -> list[dict[str, Any]]:
+    """pgvector cosine distance로 품질·문서 조건을 적용해 청크를 검색함
+
+    Args:
+        settings: DB 연결과 검색 설정임
+        embedding: 질문 임베딩 벡터임
+        top_k: 반환할 최대 결과 수임
+        document_id: 지정하면 해당 문서로 검색을 제한함
+        min_quality_score: 지정하면 품질 점수 이상인 문서만 사용함
+
+    Returns:
+        list[dict[str, Any]]: 점수 내림차순 검색 결과 목록임
+
+    Raises:
+        DatabaseError: 벡터 검색에 실패할 때 발생함
+    """
     conditions: list[str] = []
     filter_params: list[Any] = []
     if document_id is not None:

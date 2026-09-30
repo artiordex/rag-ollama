@@ -1,0 +1,385 @@
+{
+  // Python: 실행·함수·테스트
+  "Python main": {
+    "scope": "python",
+    "prefix": "pymain",
+    "body": [
+      "def main() -> None:",
+      "\t$0",
+      "",
+      "if __name__ == \"__main__\":",
+      "\tmain()"
+    ],
+    "description": "Python 실행 진입점"
+  },
+  "Python function": {
+    "scope": "python",
+    "prefix": "pydef",
+    "body": [
+      "def ${1:function_name}(${2:}) -> ${3:None}:",
+      "    \"\"\"${4:함수 설명}\"\"\"",
+      "    ${0:pass}"
+    ],
+    "description": "타입 힌트가 있는 함수"
+  },
+  "Pytest test": {
+    "scope": "python",
+    "prefix": "pytest",
+    "body": [
+      "def test_${1:behavior}() -> None:",
+      "    ${0:assert actual == expected}"
+    ],
+    "description": "pytest 테스트 함수"
+  },
+
+  // C/C++: 기본 실행 파일과 헤더
+  "C++ main": {
+    "scope": "cpp",
+    "prefix": "cppmain",
+    "body": [
+      "#include <iostream>",
+      "",
+      "int main() {",
+      "    $0",
+      "    return 0;",
+      "}"
+    ],
+    "description": "C++ 실행 진입점"
+  },
+  "C++ header": {
+    "scope": "cpp",
+    "prefix": "cppheader",
+    "include": ["*.h", "*.hpp"],
+    "body": [
+      "#pragma once",
+      "",
+      "$0"
+    ],
+    "description": "헤더 파일 시작 부분"
+  },
+  "C++ GoogleTest": {
+    "scope": "cpp",
+    "prefix": "gtest",
+    "include": ["*_test.cpp", "*_tests.cpp"],
+    "body": [
+      "TEST(${1:Suite}, ${2:Behavior}) {",
+      "    EXPECT_EQ(${3:expected}, ${4:actual});",
+      "}"
+    ],
+    "description": "GoogleTest 테스트"
+  },
+
+  // Go: 실행·오류 처리·테스트
+  "Go main": {
+    "scope": "go",
+    "prefix": "gomain",
+    "body": [
+      "package main",
+      "",
+      "func main() {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Go 실행 진입점"
+  },
+  "Go error check": {
+    "scope": "go",
+    "prefix": "goerr",
+    "body": [
+      "if ${1:err} != nil {",
+      "\t${0:return err}",
+      "}"
+    ],
+    "description": "Go 오류 확인"
+  },
+  "Go test": {
+    "scope": "go",
+    "prefix": "gotest",
+    "body": [
+      "func Test${1:Behavior}(t *testing.T) {",
+      "\tt.Parallel()",
+      "\t$0",
+      "}"
+    ],
+    "description": "Go 테스트 함수"
+  },
+
+  // TypeScript: 타입·비동기·Vitest
+  "TypeScript interface": {
+    "scope": "typescript,typescriptreact",
+    "prefix": "tsinterface",
+    "body": [
+      "export interface ${1:Name} {",
+      "\t${0:id: string;}",
+      "}"
+    ],
+    "description": "TypeScript 인터페이스"
+  },
+  "TypeScript async function": {
+    "scope": "typescript,typescriptreact",
+    "prefix": "tsasync",
+    "body": [
+      "export async function ${1:functionName}(${2:}): Promise<${3:void}> {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Promise 반환 비동기 함수"
+  },
+  "Vitest test": {
+    "scope": "typescript,typescriptreact,javascript,javascriptreact",
+    "prefix": "vitest",
+    "include": ["*.test.ts", "*.spec.ts", "*.test.tsx", "*.spec.tsx", "*.test.js", "*.spec.js"],
+    "body": [
+      "import { describe, expect, it } from \"vitest\";",
+      "",
+      "describe(\"${1:unit}\", () => {",
+      "\tit(\"${2:expected behavior}\", () => {",
+      "\t\texpect(${3:actual}).to${4|Be,Equal,StrictEqual|}(${5:expected});",
+      "\t});",
+      "});"
+    ],
+    "description": "Vitest 테스트 블록"
+  },
+  "React TypeScript component": {
+    "scope": "typescriptreact",
+    "prefix": "tsxcomponent",
+    "include": ["*.tsx"],
+    "body": [
+      "export function ${1:ComponentName}() {",
+      "\treturn (",
+      "\t\t<div>$0</div>",
+      "\t);",
+      "}"
+    ],
+    "description": "TypeScript React 함수형 컴포넌트"
+  },
+  "React JavaScript component": {
+    "scope": "javascriptreact",
+    "prefix": "jsxcomponent",
+    "include": ["*.jsx"],
+    "body": [
+      "export default function ${1:ComponentName}() {",
+      "\treturn (",
+      "\t\t<div>$0</div>",
+      "\t);",
+      "}"
+    ],
+    "description": "JavaScript React 함수형 컴포넌트"
+  },
+  "Playwright test": {
+    "scope": "typescript,typescriptreact,javascript,javascriptreact",
+    "prefix": "pwtest",
+    "include": ["*.spec.ts", "*.test.ts", "*.spec.tsx", "*.test.tsx", "*.spec.js", "*.test.js"],
+    "body": [
+      "import { expect, test } from \"@playwright/test\";",
+      "",
+      "test(\"${1:scenario}\", async ({ page }) => {",
+      "\tawait page.goto(\"${2:/}\");",
+      "\tawait expect(page).toHaveTitle(/${3:title}/);",
+      "});"
+    ],
+    "description": "Playwright 브라우저 테스트"
+  },
+
+  // Java: 실행·JUnit 5
+  "Java main": {
+    "scope": "java",
+    "prefix": "javamain",
+    "body": [
+      "public class ${1:Main} {",
+      "    public static void main(String[] args) {",
+      "        $0",
+      "    }",
+      "}"
+    ],
+    "description": "Java 실행 진입점"
+  },
+  "JUnit 5 test": {
+    "scope": "java",
+    "prefix": "junit5",
+    "body": [
+      "import org.junit.jupiter.api.Test;",
+      "import static org.junit.jupiter.api.Assertions.*;",
+      "",
+      "class ${1:ClassName}Test {",
+      "    @Test",
+      "    void ${2:behavior}() {",
+      "        assertEquals(${3:expected}, ${4:actual});",
+      "    }",
+      "}"
+    ],
+    "description": "JUnit 5 테스트 파일"
+  },
+
+  // Kotlin: 실행·데이터 클래스·JUnit 5
+  "Kotlin main": {
+    "scope": "kotlin",
+    "prefix": "ktmain",
+    "body": [
+      "fun main() {",
+      "    $0",
+      "}"
+    ],
+    "description": "Kotlin 실행 진입점"
+  },
+  "Kotlin data class": {
+    "scope": "kotlin",
+    "prefix": "ktdata",
+    "body": [
+      "data class ${1:Name}(",
+      "    val ${2:id}: ${3:Long}",
+      ")"
+    ],
+    "description": "Kotlin 데이터 클래스"
+  },
+  "Kotlin JUnit 5 test": {
+    "scope": "kotlin",
+    "prefix": "ktjunit5",
+    "body": [
+      "import org.junit.jupiter.api.Assertions.assertEquals",
+      "import org.junit.jupiter.api.Test",
+      "",
+      "class ${1:ClassName}Test {",
+      "    @Test",
+      "    fun ${2:behavior}() {",
+      "        assertEquals(${3:expected}, ${4:actual})",
+      "    }",
+      "}"
+    ],
+    "description": "Kotlin JUnit 5 테스트 파일"
+  },
+
+  // Prisma: 기본 모델
+  "Prisma model": {
+    "scope": "prisma",
+    "prefix": "prismamodel",
+    "body": [
+      "model ${1:User} {",
+      "  id        String   @id @default(cuid())",
+      "  createdAt DateTime @default(now())",
+      "  updatedAt DateTime @updatedAt",
+      "  $0",
+      "}"
+    ],
+    "description": "기본 Prisma 모델"
+  },
+
+  // MCP: 프로젝트에서 쓰는 Python·TypeScript SDK
+  "Python FastMCP server": {
+    "scope": "python",
+    "prefix": "pymcp",
+    "body": [
+      "from mcp.server.fastmcp import FastMCP",
+      "",
+      "mcp = FastMCP(\"${1:server-name}\")",
+      "",
+      "@mcp.tool()",
+      "async def ${2:tool_name}(query: str) -> dict[str, str]:",
+      "    \"\"\"${3:도구 설명}\"\"\"",
+      "    return {\"result\": query}",
+      "",
+      "def main() -> None:",
+      "    mcp.run()",
+      "",
+      "if __name__ == \"__main__\":",
+      "    main()"
+    ],
+    "description": "Python FastMCP 서버와 도구"
+  },
+  "TypeScript MCP server": {
+    "scope": "typescript",
+    "prefix": "mcpserver",
+    "body": [
+      "import { McpServer } from \"@modelcontextprotocol/server\";",
+      "import { serveStdio } from \"@modelcontextprotocol/server/stdio\";",
+      "import * as z from \"zod/v4\";",
+      "",
+      "function createServer(): McpServer {",
+      "    const server = new McpServer({ name: \"${1:server-name}\", version: \"0.1.0\" });",
+      "    server.registerTool(",
+      "        \"${2:tool_name}\",",
+      "        {",
+      "            description: \"${3:도구 설명}\",",
+      "            inputSchema: z.object({ query: z.string() }),",
+      "        },",
+      "        async ({ query }) => ({ content: [{ type: \"text\", text: query }] }),",
+      "    );",
+      "    return server;",
+      "}",
+      "",
+      "void serveStdio(createServer);"
+    ],
+    "description": "TypeScript MCP stdio 서버와 입력 검증 도구"
+  },
+  "TypeScript MCP stdio client": {
+    "scope": "typescript",
+    "prefix": "mcpclient",
+    "body": [
+      "import { Client } from \"@modelcontextprotocol/client\";",
+      "import { StdioClientTransport } from \"@modelcontextprotocol/client/stdio\";",
+      "",
+      "const client = new Client({ name: \"${1:client-name}\", version: \"0.1.0\" });",
+      "const transport = new StdioClientTransport({",
+      "    command: \"${2:node}\",",
+      "    args: [\"${3:dist/server.js}\"],",
+      "});",
+      "",
+      "await client.connect(transport);",
+      "try {",
+      "    const { tools } = await client.listTools();",
+      "    $0",
+      "} finally {",
+      "    await client.close();",
+      "}"
+    ],
+    "description": "TypeScript MCP stdio 클라이언트 연결과 종료"
+  },
+
+  // 문서·API·SQL
+  "Markdown section": {
+    "scope": "markdown",
+    "prefix": "mdsection",
+    "body": [
+      "## ${1:제목}",
+      "",
+      "$0"
+    ],
+    "description": "Markdown 제목과 본문"
+  },
+  "HTTP GET JSON": {
+    "scope": "http",
+    "prefix": "httpget",
+    "body": [
+      "### ${1:요청 이름}",
+      "GET ${2:http://localhost:8080/} HTTP/1.1",
+      "Accept: application/json"
+    ],
+    "description": "JSON 응답용 HTTP GET"
+  },
+  "HTTP POST JSON": {
+    "scope": "http",
+    "prefix": "httppost",
+    "body": [
+      "### ${1:요청 이름}",
+      "POST ${2:http://localhost:8080/} HTTP/1.1",
+      "Accept: application/json",
+      "Content-Type: application/json",
+      "",
+      "{",
+      "  \"${3:key}\": \"${4:value}\"",
+      "}"
+    ],
+    "description": "JSON 본문을 보내는 HTTP POST"
+  },
+  "SQL select limit": {
+    "scope": "sql",
+    "prefix": "sqlselect",
+    "body": [
+      "SELECT ${1:*}",
+      "FROM ${2:table_name}",
+      "WHERE ${3:1 = 1}",
+      "LIMIT ${4:100};"
+    ],
+    "description": "조건과 건수 제한이 있는 SELECT"
+  }
+}

@@ -1,4 +1,4 @@
-# Python-generated files
+# Python이 생성하는 파일을 제외함
 __pycache__/
 *.py[oc]
 build/
@@ -6,10 +6,13 @@ dist/
 wheels/
 *.egg-info
 
-# Virtual environments
+# 가상환경을 제외함
 .venv
 
-# Local configuration and model/cache data
+# 개인용 VS Code 설정만 제외함
+.vscode/*.local.*
+
+# 로컬 설정과 모델·캐시 데이터를 제외함
 .env
 .env.*
 !.env.example

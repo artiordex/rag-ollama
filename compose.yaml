@@ -1,3 +1,4 @@
+# NOTE: 로컬 PostgreSQL·pgvector 개발 서비스를 정의함
 services:
   postgres:
     image: pgvector/pgvector:pg16

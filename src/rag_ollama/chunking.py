@@ -1,4 +1,13 @@
-"""Small, dependency-free text normalizer and chunker."""
+# =============================================================================
+# 파일명: chunking.py
+# 경로: src/rag_ollama/chunking.py
+# 목적: 모델 의존성 없이 텍스트를 정규화하고 검색 청크로 분할함
+# 작성자: AI전략팀
+# 작성일: 2026-09-30
+# 수정일: 2026-09-30
+# =============================================================================
+
+"""모델 의존성 없이 텍스트를 정규화하고 검색 청크로 분할함"""
 
 from __future__ import annotations
 
@@ -6,9 +15,13 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
+MAX_TEXT_CHARACTERS = 5_000_000
+
 
 @dataclass(frozen=True, slots=True)
 class TextChunk:
+    """원문 위치와 검색용 텍스트를 함께 보존하는 불변 청크임"""
+
     index: int
     text: str
     start: int
@@ -16,6 +29,14 @@ class TextChunk:
 
 
 def normalize_text(text: str) -> str:
+    """유니코드·개행·공백을 검색 전에 비교 가능한 형태로 정규화함
+
+    Args:
+        text: 원문 텍스트임
+
+    Returns:
+        str: 제어문자와 과도한 빈 줄을 정리한 텍스트임
+    """
     text = unicodedata.normalize("NFKC", text)
     text = text.replace("\x00", "")
     text = text.replace("\r\n", "\n").replace("\r", "\n")
@@ -28,6 +49,7 @@ _BOUNDARY = re.compile(r"\n\n|(?<=[.!?。！？])\s+|\n")
 
 
 def _best_boundary(text: str, start: int, end: int) -> int:
+    """청크 상한 안에서 문단·문장 경계를 우선한 종료 위치를 선택함"""
     if end >= len(text):
         return len(text)
     window_start = start + int((end - start) * 0.55)
@@ -38,11 +60,22 @@ def _best_boundary(text: str, start: int, end: int) -> int:
 
 
 def chunk_text(text: str, max_chars: int = 1600, overlap: int = 240) -> list[TextChunk]:
-    """Split text while preferring paragraph/sentence boundaries.
+    """문단·문장 경계를 우선해 텍스트를 겹침 청크로 분할함
 
-    Character sizes are intentionally used instead of model token sizes so this
-    component works before an embedding model is loaded. The defaults are a
-    reasonable starting point for Korean and English mixed documents.
+    Args:
+        text: 정규화할 원문 텍스트임
+        max_chars: 청크별 최대 문자 수임
+        overlap: 인접 청크가 공유할 문자 수임
+
+    Returns:
+        list[TextChunk]: 검색에 사용할 청크와 원문 위치 목록임
+
+    Raises:
+        ValueError: 최대 크기나 겹침 범위가 유효하지 않을 때 발생함
+
+    Caveats:
+        모델 토큰 수가 아닌 문자 수를 사용해 임베딩 모델을 로딩하기 전에도
+        동작하도록 구성함
     """
 
     if max_chars <= 0:

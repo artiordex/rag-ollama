@@ -1,4 +1,13 @@
-"""Embedding providers with lazy model loading."""
+# =============================================================================
+# 파일명: embeddings.py
+# 경로: src/rag_ollama/embeddings.py
+# 목적: FlagEmbedding과 결정적 hash 임베딩을 동일 인터페이스로 제공함
+# 작성자: AI전략팀
+# 작성일: 2026-09-30
+# 수정일: 2026-09-30
+# =============================================================================
+
+"""FlagEmbedding과 결정적 hash 임베딩을 동일 인터페이스로 제공함"""
 
 from __future__ import annotations
 
@@ -12,10 +21,11 @@ from .config import Settings
 
 
 class EmbeddingError(RuntimeError):
-    """Raised when text cannot be embedded."""
+    """텍스트를 임베딩 벡터로 변환하지 못했음을 나타내는 예외임"""
 
 
 def _normalize(vector: list[float]) -> list[float]:
+    """검색 비교를 위해 벡터를 L2 단위 길이로 정규화함"""
     norm = math.sqrt(sum(value * value for value in vector))
     if norm == 0:
         return vector
@@ -23,15 +33,20 @@ def _normalize(vector: list[float]) -> list[float]:
 
 
 class Embedder:
+    """설정에 따라 FlagEmbedding 또는 결정적 hash 임베딩을 제공함"""
+
     def __init__(self, settings: Settings) -> None:
+        """설정을 보관하고 무거운 임베딩 모델은 최초 사용까지 지연함"""
         self.settings = settings
         self._model: Any = None
 
     @property
     def dimension(self) -> int:
+        """저장소 벡터 차원과 맞춰야 하는 현재 임베딩 차원을 반환함"""
         return self.settings.embedding_dim
 
     def _hash_embed(self, texts: list[str]) -> list[list[float]]:
+        """의미 검색이 아닌 연결·테스트용 결정적 hash 벡터를 생성함"""
         vectors: list[list[float]] = []
         for text in texts:
             vector = [0.0] * self.dimension
@@ -46,11 +61,16 @@ class Embedder:
         return vectors
 
     def _load_flag_model(self) -> Any:
+        """FlagEmbedding 모델을 최초 사용 시 한 번만 지연 로딩함
+
+        Raises:
+            EmbeddingError: 의존성·모델 경로·실행 장치 문제로 로딩하지 못할 때 발생함
+        """
         if self._model is not None:
             return self._model
         try:
             from FlagEmbedding import FlagAutoModel
-        except ImportError as exc:  # pragma: no cover - dependency is declared
+        except ImportError as exc:  # NOTE: 선언된 의존성이 테스트 환경에서 누락된 경우만 해당함
             raise EmbeddingError("FlagEmbedding이 설치되어 있지 않습니다.") from exc
 
         kwargs: dict[str, Any] = {"use_fp16": self.settings.embedding_use_fp16}
@@ -70,6 +90,7 @@ class Embedder:
 
     @staticmethod
     def _as_lists(value: Any) -> list[list[float]]:
+        """FlagEmbedding 반환값을 중첩된 Python float 목록으로 정규화함"""
         if isinstance(value, dict):
             value = value.get("dense_vecs")
             if value is None:
@@ -79,6 +100,18 @@ class Embedder:
         return [[float(item) for item in row] for row in value]
 
     def _flag_embed(self, texts: list[str], query: bool) -> list[list[float]]:
+        """FlagEmbedding으로 문서 또는 질문 벡터를 계산하고 차원을 검증함
+
+        Args:
+            texts: 임베딩할 텍스트 목록임
+            query: 질문 전용 인코더 사용 여부임
+
+        Returns:
+            list[list[float]]: 길이가 설정 차원과 일치하는 정규화 벡터임
+
+        Raises:
+            EmbeddingError: 모델 호출 실패나 차원 불일치가 있을 때 발생함
+        """
         model = self._load_flag_model()
         try:
             method_name = "encode_queries" if query else "encode_corpus"
@@ -97,6 +130,11 @@ class Embedder:
         return [_normalize(vector) for vector in vectors]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        """문서 텍스트 목록을 검색 저장용 임베딩으로 변환함
+
+        Raises:
+            EmbeddingError: 설정된 임베딩 제공자를 사용할 수 없을 때 발생함
+        """
         if self.settings.embedding_provider == "hash":
             return self._hash_embed(texts)
         if self.settings.embedding_provider == "flag":
@@ -104,6 +142,11 @@ class Embedder:
         raise EmbeddingError(f"지원하지 않는 EMBEDDING_PROVIDER입니다: {self.settings.embedding_provider}")
 
     def embed_query(self, text: str) -> list[float]:
+        """질문 한 건을 문서 검색과 호환되는 임베딩으로 변환함
+
+        Raises:
+            EmbeddingError: 설정된 임베딩 제공자를 사용할 수 없을 때 발생함
+        """
         if self.settings.embedding_provider == "hash":
             return self._hash_embed([text])[0]
         if self.settings.embedding_provider == "flag":
@@ -113,4 +156,5 @@ class Embedder:
 
 @lru_cache(maxsize=4)
 def get_embedder(settings: Settings) -> Embedder:
+    """동일한 불변 설정에 대해 임베더 인스턴스를 재사용함"""
     return Embedder(settings)

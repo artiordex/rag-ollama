@@ -1,25 +1,48 @@
-"""Baseline quality diagnostics for unstructured text."""
+# =============================================================================
+# 파일명: quality.py
+# 경로: src/rag_ollama/quality.py
+# 목적: 비정형 텍스트의 설명 가능한 기초 품질 지표와 이슈 산출함
+# 작성자: AI전략팀
+# 작성일: 2026-09-30
+# 수정일: 2026-09-30
+# =============================================================================
+
+"""비정형 텍스트의 설명 가능한 기초 품질 지표와 이슈 산출함"""
 
 from __future__ import annotations
 
 import re
 from collections import Counter
 
-from .chunking import normalize_text
+from .chunking import MAX_TEXT_CHARACTERS, normalize_text
 
 
 def _issue(severity: str, code: str, message: str, value: float | int | str | None = None) -> dict[str, object]:
+    """품질 진단 결과에서 일관된 이슈 구조를 생성함"""
     return {"severity": severity, "code": code, "message": message, "value": value}
 
 
 def diagnose_text(text: str, source_name: str = "", metadata: dict[str, object] | None = None) -> dict[str, object]:
-    """Return deterministic, explainable quality metrics.
+    """비정형 텍스트에서 재현 가능한 기초 품질 지표와 이슈를 산출함
 
-    This is a baseline, not a domain-specific acceptance rule. The report is
-    intentionally stored with each document so later rule versions can be
-    compared and re-run.
+    Args:
+        text: 진단할 원문 텍스트임
+        source_name: 품질 리포트에 기록할 원천 이름임
+        metadata: 페이지·표 개수처럼 파서가 제공한 보조 지표임
+
+    Returns:
+        dict[str, object]: 점수, 상태, 규칙 버전, 지표와 이슈 목록임
+
+    Raises:
+        ValueError: 입력 텍스트가 최대 문자 수를 초과할 때 발생함
+
+    Caveats:
+        도메인 승인 기준이 아닌 학습용 baseline이며, 문서와 함께 저장해
+        규칙 버전별 재진단 비교에 사용함
     """
 
+    if len(text) > MAX_TEXT_CHARACTERS:
+        raise ValueError(f"진단 텍스트가 허용 한도({MAX_TEXT_CHARACTERS}자)를 초과했습니다.")
     normalized = normalize_text(text)
     lines = normalized.splitlines() if normalized else []
     non_empty_lines = [line.strip() for line in lines if line.strip()]
@@ -92,4 +115,11 @@ def diagnose_text(text: str, source_name: str = "", metadata: dict[str, object] 
 
     score = max(0, min(100, score))
     status = "pass" if score >= 90 else "warn" if score >= 70 else "fail"
-    return {"score": score, "status": status, "metrics": metrics, "issues": issues}
+    return {
+        "score": score,
+        "status": status,
+        "assessment_scope": "rag-ollama-learning-baseline",
+        "rule_set_version": "baseline-text-v1",
+        "metrics": metrics,
+        "issues": issues,
+    }

@@ -1,9 +1,18 @@
-"""rag-ollama package entry points."""
+# =============================================================================
+# 파일명: __init__.py
+# 경로: src/rag_ollama/__init__.py
+# 목적: rag-ollama 패키지의 CLI 진입점 제공함
+# 작성자: AI전략팀
+# 작성일: 2026-09-30
+# 수정일: 2026-09-30
+# =============================================================================
+
+"""rag-ollama 패키지의 CLI 진입점 제공함"""
 
 __all__ = ["main"]
 
 
 def main() -> None:
-    """Print a short hint for the command-line entry point."""
+    """CLI 진입점 사용 방법을 짧게 출력함"""
 
     print("Run the API with: uv run rag-ollama-api")
