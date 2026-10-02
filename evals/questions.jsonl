@@ -1,0 +1,7 @@
+{"id":"tokenizer-token-ids","question":"토크나이저는 문장을 모델 입력으로 어떤 형태로 바꾸나요?","expected_answer":"문장을 토큰 ID의 수열로 바꿉니다.","expected_evidence":"토큰 ID의 수열","top_k":1}
+{"id":"encoder-pretraining","question":"BERT 같은 인코더 모델의 대표적인 사전 학습 목표는 무엇인가요?","expected_answer":"가린 토큰을 맞히는 마스킹 언어 모델링입니다.","expected_evidence":"마스킹 언어 모델링","top_k":1}
+{"id":"causal-generation","question":"디코더 전용 인과 언어 모델은 다음 토큰을 어떻게 예측하나요?","expected_answer":"앞에서 이미 나온 토큰을 바탕으로 다음 토큰의 확률을 계산합니다.","expected_evidence":"앞에서 이미 나온 토큰을 바탕으로 다음 토큰","top_k":1}
+{"id":"encoder-decoder","question":"T5 같은 인코더-디코더 모델은 입력을 어떻게 출력으로 바꾸나요?","expected_answer":"입력 시퀀스를 인코딩하고 그 표현을 조건으로 출력 시퀀스를 생성합니다.","expected_evidence":"입력 시퀀스를 인코딩한 뒤","top_k":1}
+{"id":"inference-finetuning","question":"추론과 파인튜닝은 모델 가중치에 어떤 차이가 있나요?","expected_answer":"추론은 가중치를 업데이트하지 않고, 파인튜닝은 학습으로 가중치를 업데이트합니다.","expected_evidence":"추론 중에는 가중치를 업데이트하지 않는다","top_k":1}
+{"id":"lora-adapter","question":"LoRA는 전체 가중치를 다시 학습하는 대신 무엇을 학습하나요?","expected_answer":"일부 선형 층에 붙인 작은 저랭크 어댑터 파라미터를 학습합니다.","expected_evidence":"작은 저랭크 어댑터","top_k":1}
+{"id":"rag-evaluation-stages","question":"RAG에서 검색 단계와 생성 단계는 왜 따로 평가해야 하나요?","expected_answer":"잘못된 근거가 검색되면 생성 모델도 주어진 문맥만으로 답하기 어렵기 때문입니다.","expected_evidence":"검색 단계와 생성 단계로 나눌 수 있다","top_k":1}

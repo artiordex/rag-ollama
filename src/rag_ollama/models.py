@@ -88,6 +88,7 @@ class QueryResponse(BaseModel):
     answer: str | None
     context: str
     llm_configured: bool
+    generation: dict[str, Any] | None = None
     sources: list[SourceHit]
 
 

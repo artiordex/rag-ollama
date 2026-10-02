@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -68,6 +69,14 @@ class Settings:
     chunk_size: int
     chunk_overlap: int
     retrieval_top_k: int
+    llm_backend: str
+    hf_model_id: str
+    hf_revision: str
+    hf_device_map: str
+    hf_dtype: str
+    hf_quantization: str
+    llm_max_new_tokens: int
+    llm_temperature: float
     llm_base_url: str | None
     llm_api_key: str | None
     llm_model: str | None
@@ -97,6 +106,33 @@ class Settings:
             raise ValueError("LLM_TIMEOUT_SECONDS must be positive")
         if self.max_upload_bytes <= 0:
             raise ValueError("MAX_UPLOAD_BYTES must be positive")
+        if self.llm_backend not in {"transformers", "openai-compatible", "none"}:
+            raise ValueError("LLM_BACKEND must be 'transformers', 'openai-compatible', or 'none'")
+        if self.llm_backend == "transformers" and not self.hf_model_id.strip():
+            raise ValueError("HF_MODEL_ID is required when LLM_BACKEND=transformers")
+        if not self.hf_revision.strip():
+            raise ValueError("HF_REVISION must not be empty")
+        if self.hf_dtype not in {"auto", "float16", "bfloat16", "float32"}:
+            raise ValueError("HF_DTYPE must be auto, float16, bfloat16, or float32")
+        if self.hf_quantization not in {"none", "4bit"}:
+            raise ValueError("HF_QUANTIZATION must be none or 4bit")
+        if self.hf_quantization != "none" and self.llm_backend != "transformers":
+            raise ValueError("HF_QUANTIZATION is only available with LLM_BACKEND=transformers")
+        if not re.fullmatch(r"auto|cpu|cuda:\d+", self.hf_device_map):
+            raise ValueError("HF_DEVICE_MAP must be auto, cpu, or cuda:<index>")
+        if self.llm_max_new_tokens <= 0:
+            raise ValueError("LLM_MAX_NEW_TOKENS must be positive")
+        if not 0 <= self.llm_temperature <= 2:
+            raise ValueError("LLM_TEMPERATURE must be between 0 and 2")
+
+    @property
+    def llm_configured(self) -> bool:
+        """선택된 생성 백엔드에 필요한 모델 설정이 있는지 반환함"""
+        if self.llm_backend == "transformers":
+            return bool(self.hf_model_id.strip())
+        if self.llm_backend == "openai-compatible":
+            return bool(self.llm_base_url and self.llm_model)
+        return False
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -123,6 +159,14 @@ class Settings:
             chunk_size=_int_env("CHUNK_SIZE", 1600),
             chunk_overlap=_int_env("CHUNK_OVERLAP", 240),
             retrieval_top_k=_int_env("RETRIEVAL_TOP_K", 5),
+            llm_backend=os.getenv("LLM_BACKEND", "transformers").strip().lower(),
+            hf_model_id=os.getenv("HF_MODEL_ID", "Qwen/Qwen3-4B-Instruct-2507").strip(),
+            hf_revision=os.getenv("HF_REVISION", "main").strip(),
+            hf_device_map=os.getenv("HF_DEVICE_MAP", "auto").strip().lower(),
+            hf_dtype=os.getenv("HF_DTYPE", "auto").strip().lower(),
+            hf_quantization=os.getenv("HF_QUANTIZATION", "none").strip().lower(),
+            llm_max_new_tokens=_int_env("LLM_MAX_NEW_TOKENS", 512),
+            llm_temperature=_float_env("LLM_TEMPERATURE", 0.0),
             llm_base_url=os.getenv("LLM_BASE_URL") or None,
             llm_api_key=os.getenv("LLM_API_KEY") or None,
             llm_model=os.getenv("LLM_MODEL") or None,

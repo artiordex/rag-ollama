@@ -18,3 +18,4 @@ wheels/
 !.env.example
 .cache/
 models/
+experiments/results/

@@ -160,11 +160,12 @@ def query_rag(
     )
     context = build_context(hits)
     llm = LLMClient(settings)
-    answer = llm.complete(question, context) if use_llm and hits else None
+    completion = llm.complete(question, context) if use_llm and hits else None
     return {
-        "answer": answer,
+        "answer": completion.answer if completion else None,
         "context": context,
         "llm_configured": llm.configured,
+        "generation": completion.to_dict() if completion else None,
         "sources": [
             {
                 "rank": index,

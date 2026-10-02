@@ -89,7 +89,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="rag-ollama API",
     version="0.1.0",
-    description="Unstructured document ingestion, quality diagnostics, and pgvector RAG retrieval.",
+    description="Hugging Face Transformers model experiments, document diagnostics, and pgvector RAG retrieval.",
     lifespan=lifespan,
 )
 router = APIRouter(dependencies=[Depends(_require_api_key)])
@@ -111,7 +111,8 @@ def health() -> dict[str, Any]:
         "database": "up" if database_ok else "down",
         "embedding_provider": settings.embedding_provider,
         "embedding_model": settings.embedding_model,
-        "llm_configured": bool(settings.llm_base_url and settings.llm_model),
+        "llm_backend": settings.llm_backend,
+        "llm_configured": settings.llm_configured,
     }
 
 
